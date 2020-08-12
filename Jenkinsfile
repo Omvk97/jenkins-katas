@@ -55,8 +55,11 @@ pipeline {
     stage('Component Test') {
       agent any
       when  {
-        not {
-          branch 'dev/*'
+        anyOf {
+          not {
+            branch 'dev/*'
+          }
+          changeRequest()
         }
       }
       steps {
