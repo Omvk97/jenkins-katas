@@ -31,7 +31,7 @@ pipeline {
             unstash 'code'
             sh 'ci/build-app.sh'
             archiveArtifacts(artifacts: 'app/build/libs/', onlyIfSuccessful: true)
-            stash excludes: '.git', name: 'code'
+            stash excludes: '.git', name: 'buildCode'
           }
         }
 
@@ -52,13 +52,26 @@ pipeline {
         }
       }
     }
+    stage('Component Test') {
+      agent any
+      when  {
+        not {
+          branch 'dev/*'
+        }
+      }
+      steps {
+        unstash 'code'
+        sh 'ci/component-test.sh'
+      }
+    }
     stage('Push Docker App') {
       agent any
+      when { branch 'master' }
       environment {
         DOCKERCREDS = credentials('docker_login') //use the credentials just created in this stage
       }
       steps {
-        unstash 'code' //unstash the repository code
+        unstash 'buildCode' //unstash the repository code
         sh 'ci/build-docker.sh'
         sh 'echo "$DOCKERCREDS_PSW" | docker login -u "$DOCKERCREDS_USR" --password-stdin' //login to docker hub with the credentials above
         input 'Push image to DockerHub?'
