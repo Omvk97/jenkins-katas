@@ -31,9 +31,7 @@ pipeline {
             unstash 'code'
             sh 'ci/build-app.sh'
             archiveArtifacts(artifacts: 'app/build/libs/', onlyIfSuccessful: true)
-            sh 'ls'
-            deleteDir()
-            sh 'ls'
+            stash excludes: '.git', name: 'code'
           }
         }
 
@@ -63,13 +61,14 @@ pipeline {
         unstash 'code' //unstash the repository code
         sh 'ci/build-docker.sh'
         sh 'echo "$DOCKERCREDS_PSW" | docker login -u "$DOCKERCREDS_USR" --password-stdin' //login to docker hub with the credentials above
+        input 'Push image to DockerHub?'
         sh 'ci/push-docker.sh'
       }
     }
   }
   post {
-        always {
+    always {
       deleteDir() /* clean up our workspace */
-        }
+    }
   }
 }
